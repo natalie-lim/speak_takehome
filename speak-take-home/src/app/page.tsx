@@ -8,7 +8,7 @@ export default function Home() {
       <p className="text-3xl font-semibold">SPEAK</p>
       <Image src={Logo} alt="Speak logo" width={100} height={100} priority />
       <Link
-        href="/studio"
+        href="/main"
         className="mt-6 rounded-xl bg-[#1b47ff] px-4 py-2 text-sm font-semibold text-white"
       >
         Get Started
