@@ -1,77 +1,74 @@
-import express from 'express';
-import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
+import "dotenv/config";
+import express from "express";
+import { createServer } from "http";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const app = express();
 const server = createServer(app);
 
-app.use(express.static('public'));
+app.use(express.static("public"));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
+const SPEAK_WS_URL =
+  process.env.SPEAK_WS_URL ?? "wss://api.usespeak-staging.com/public/v2/ws";
+const SPEAK_ACCESS_TOKEN = process.env.SPEAK_WS_X_ACCESS_TOKEN ?? "";
+const SPEAK_CLIENT_INFO = process.env.SPEAK_WS_X_CLIENT_INFO ?? "";
 
-app.get('/', (req, res) => {
-    res.send(`
-...
-    `);
+app.get("/", (req, res) => {
+  res.send(`
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Speak Proxy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <main>
+      <h1>Speak websocket proxy is running.</h1>
+      <p>Connect via <code>ws://localhost:${PORT}/ws</code></p>
+    </main>
+  </body>
+</html>
+  `);
 });
 
-const wss = new WebSocketServer({ 
-    server,
-    clientTracking: true
-});
-
-wss.on('connection', function connection(ws, request) {
-    const clientIP = request.socket.remoteAddress;
-    console.log(`New client connected from ${clientIP}`);
-
-    // Send welcome message
-    ws.send('Welcome to the WebSocket server!');
-
-    ws.on('message', function message(data) {
-        try {
-            const messageText = data.toString();
-            console.log('Received:', messageText);
-
-            if (ws.readyState === ws.OPEN) {
-                ws.send(`Echo: ${messageText}`);
-            }
-        } catch (error) {
-            console.error('Error processing message:', error);
+const speakProxy = createProxyMiddleware("/ws", {
+  target: SPEAK_WS_URL,
+  changeOrigin: true,
+  ws: true,
+  secure: true,
+  pathRewrite: {
+    "^/ws": "",
+  },
+  onProxyReqWs(proxyReq) {
+    if (SPEAK_ACCESS_TOKEN) {
+      proxyReq.setHeader("X-Access-Token", SPEAK_ACCESS_TOKEN);
+    }
+    if (SPEAK_CLIENT_INFO) {
+      proxyReq.setHeader("X-Client-Info", SPEAK_CLIENT_INFO);
+    }
+  },
+  headers:
+    SPEAK_ACCESS_TOKEN || SPEAK_CLIENT_INFO
+      ? {
+          ...(SPEAK_ACCESS_TOKEN
+            ? { "X-Access-Token": SPEAK_ACCESS_TOKEN }
+            : {}),
+          ...(SPEAK_CLIENT_INFO ? { "X-Client-Info": SPEAK_CLIENT_INFO } : {}),
         }
-    });
-
-    ws.on('close', function close(code, reason) {
-        console.log(`Client disconnected - Code: ${code}, Reason: ${reason}`);
-    });
-
-    ws.on('error', function error(err) {
-        console.error('WebSocket error:', err);
-    });
-
-    // Handle connection ping/pong for keep-alive
-    ws.on('pong', function heartbeat() {
-        ws.isAlive = true;
-    });
-
-    ws.isAlive = true;
+      : undefined,
 });
 
-// Ping clients periodically to detect broken connections
-const interval = setInterval(function ping() {
-    wss.clients.forEach(function each(ws) {
-        if (ws.isAlive === false) {
-            return ws.terminate();
-        }
+app.use("/ws", speakProxy);
 
-        ws.isAlive = false;
-        ws.ping();
-    });
-}, 30000);
-
-wss.on('close', function close() {
-    clearInterval(interval);
+server.on("upgrade", (req, socket, head) => {
+  if (req.url?.startsWith("/ws")) {
+    speakProxy.upgrade(req, socket, head);
+  }
 });
 
 server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Proxy server running on http://localhost:${PORT}`);
+  console.log(`Forwarding WebSocket traffic to ${SPEAK_WS_URL}`);
 });
