@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import CoursesView from "./courses";
 import LessonsView from "./lessons";
 import Record from "./record";
+import type { Course } from "./types";
 
 type ActiveView = "record" | "courses" | "lessons";
 
@@ -13,11 +14,104 @@ const navOptions: Array<{ label: string; value: ActiveView }> = [
   { label: "View Lessons", value: "lessons" },
 ];
 
+const courseCatalog: Course[] = [
+  {
+    id: "fr",
+    flag: "🇫🇷",
+    name: "French Français",
+    subtitle: "Daily Parisian dialogues and pronunciation drills.",
+    lessons: [
+      {
+        id: "fr-1",
+        title: "Ordering at the café",
+        summary:
+          "Practice casual greetings, ordering drinks, and confirming the bill with native pacing.",
+        duration: "12 min",
+      },
+      {
+        id: "fr-2",
+        title: "Weekend plans",
+        summary:
+          "Learn to suggest activities, respond enthusiastically, and negotiate schedules with friends.",
+        duration: "10 min",
+      },
+      {
+        id: "fr-3",
+        title: "Metro directions",
+        summary:
+          "Give and receive navigation tips using landmarks, metro lines, and polite fillers.",
+        duration: "9 min",
+      },
+    ],
+  },
+  {
+    id: "es",
+    flag: "🇲🇽",
+    name: "Spanish Español",
+    subtitle: "Latin American small talk and storytelling practice.",
+    lessons: [
+      {
+        id: "es-1",
+        title: "Market conversations",
+        summary:
+          "Negotiate prices, compliment produce, and wrap up purchases with cultural phrases.",
+        duration: "11 min",
+      },
+      {
+        id: "es-2",
+        title: "Sharing your story",
+        summary:
+          "Describe your background, hobbies, and daily routine with confident tenses.",
+        duration: "13 min",
+      },
+      {
+        id: "es-3",
+        title: "Planning a trip",
+        summary:
+          "Discuss destinations, preferences, and travel plans while understanding suggestions.",
+        duration: "10 min",
+      },
+    ],
+  },
+  {
+    id: "ko",
+    flag: "🇰🇷",
+    name: "Korean 한국어",
+    subtitle: "Conversational Korean for everyday moments in Seoul.",
+    lessons: [
+      {
+        id: "ko-1",
+        title: "Meeting someone new",
+        summary:
+          "Introduce yourself, exchange polite questions, and respond naturally to follow-ups.",
+        duration: "12 min",
+      },
+      {
+        id: "ko-2",
+        title: "Ordering delivery",
+        summary:
+          "Practice placing an order, confirming details, and thanking the delivery driver.",
+        duration: "8 min",
+      },
+      {
+        id: "ko-3",
+        title: "After-work hangout",
+        summary:
+          "Make casual invitations, talk about interests, and politely decline with reasons.",
+        duration: "9 min",
+      },
+    ],
+  },
+];
+
 export default function Main() {
   const [isOpen, setIsOpen] = useState(false);
   const [touchStartX, setTouchStartX] = useState(0);
   const [touchEndX, setTouchEndX] = useState(0);
   const [activeView, setActiveView] = useState<ActiveView>("record");
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(
+    courseCatalog[0]
+  );
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -35,7 +129,16 @@ export default function Main() {
   const toggleMenu = () => setIsOpen((prev) => !prev);
 
   const handleSelectView = (view: ActiveView) => {
+    if (view === "lessons" && !selectedCourse) {
+      setSelectedCourse(courseCatalog[0]);
+    }
     setActiveView(view);
+    closeMenu();
+  };
+
+  const openLessonsForCourse = (course: Course) => {
+    setSelectedCourse(course);
+    setActiveView("lessons");
     closeMenu();
   };
 
@@ -61,9 +164,20 @@ export default function Main() {
   const renderActiveView = () => {
     switch (activeView) {
       case "courses":
-        return <CoursesView />;
+        return (
+          <CoursesView
+            courses={courseCatalog}
+            activeCourseId={selectedCourse?.id}
+            onSelectCourse={openLessonsForCourse}
+          />
+        );
       case "lessons":
-        return <LessonsView />;
+        return (
+          <LessonsView
+            course={selectedCourse ?? null}
+            onBack={() => setActiveView("courses")}
+          />
+        );
       default:
         return <Record />;
     }
