@@ -112,6 +112,7 @@ export default function Main() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(
     courseCatalog[0]
   );
+  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -132,13 +133,30 @@ export default function Main() {
     if (view === "lessons" && !selectedCourse) {
       setSelectedCourse(courseCatalog[0]);
     }
+    if (view === "record" && !selectedCourse) {
+      setSelectedCourse(courseCatalog[0]);
+    }
+    if (view !== "record") {
+      setSelectedLesson(null);
+    }
     setActiveView(view);
     closeMenu();
   };
 
   const openLessonsForCourse = (course: Course) => {
     setSelectedCourse(course);
+    setSelectedLesson(null);
     setActiveView("lessons");
+    closeMenu();
+  };
+
+  const startRecordingForCourse = (
+    course: Course,
+    lessonTitle: string | null = null
+  ) => {
+    setSelectedCourse(course);
+    setSelectedLesson(lessonTitle);
+    setActiveView("record");
     closeMenu();
   };
 
@@ -169,6 +187,7 @@ export default function Main() {
             courses={courseCatalog}
             activeCourseId={selectedCourse?.id}
             onSelectCourse={openLessonsForCourse}
+            onOpenRecord={(course) => startRecordingForCourse(course)}
           />
         );
       case "lessons":
@@ -176,10 +195,18 @@ export default function Main() {
           <LessonsView
             course={selectedCourse ?? null}
             onBack={() => setActiveView("courses")}
+            onStart={(course, lessonTitle) =>
+              startRecordingForCourse(course, lessonTitle)
+            }
           />
         );
       default:
-        return <Record />;
+        return (
+          <Record
+            course={selectedCourse ?? null}
+            lessonTitle={selectedLesson}
+          />
+        );
     }
   };
 

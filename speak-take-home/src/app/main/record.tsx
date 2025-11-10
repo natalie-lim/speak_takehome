@@ -2,8 +2,16 @@
 
 import Image from "next/image";
 import Logo from "../assets/logo.webp";
+import type { Course } from "./types";
 
-export default function Record() {
+type RecordProps = {
+  course?: Course | null;
+  lessonTitle?: string | null;
+};
+
+export default function Record({ course, lessonTitle }: RecordProps) {
+  const languageName = course?.name ?? "your target language";
+
   return (
     <section className="flex flex-col items-center justify-center text-center text-slate-600">
       <div className="flex flex-col items-center justify-center gap-2">
@@ -12,12 +20,16 @@ export default function Record() {
       </div>
 
       <div className="mt-8 space-y-1 text-sm">
-        <p className="font-medium text-slate-800">
-          Practice your target language
-        </p>
-        <p className="text-slate-500">
-          Let&apos;s see how much you&apos;ve learned today!
-        </p>
+        <p className="font-medium text-slate-800">Practice {languageName}</p>
+        {lessonTitle ? (
+          <p className="text-slate-500">
+            Warm-up focus: <span className="font-semibold">{lessonTitle}</span>
+          </p>
+        ) : (
+          <p className="text-slate-500">
+            Let&apos;s see how much you&apos;ve learned today!
+          </p>
+        )}
       </div>
 
       <button

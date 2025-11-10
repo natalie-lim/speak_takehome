@@ -5,9 +5,14 @@ import type { Course } from "./types";
 type LessonsViewProps = {
   course: Course | null;
   onBack: () => void;
+  onStart: (course: Course, lessonTitle: string) => void;
 };
 
-export default function LessonsView({ course, onBack }: LessonsViewProps) {
+export default function LessonsView({
+  course,
+  onBack,
+  onStart,
+}: LessonsViewProps) {
   if (!course) {
     return (
       <section className="flex flex-col items-center justify-center gap-4 text-center text-slate-600">
@@ -56,6 +61,15 @@ export default function LessonsView({ course, onBack }: LessonsViewProps) {
             <p className="mt-2 text-sm leading-6 text-slate-500">
               {lesson.summary}
             </p>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => onStart(course, lesson.title)}
+                className="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-sky-700"
+              >
+                Practice now
+              </button>
+            </div>
           </article>
         ))}
       </div>
