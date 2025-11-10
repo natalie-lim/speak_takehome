@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Logo from "../assets/logo.webp";
+import Logo from "../assets/logo.png";
 import type { Course } from "./types";
 
 type LessonsViewProps = {
