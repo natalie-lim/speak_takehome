@@ -14,61 +14,64 @@ const SPEAK_WS_URL =
 const SPEAK_ACCESS_TOKEN = process.env.SPEAK_WS_X_ACCESS_TOKEN ?? "";
 const SPEAK_CLIENT_INFO = process.env.SPEAK_WS_X_CLIENT_INFO ?? "";
 
-app.get("/", (req, res) => {
-  res.send(`
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Speak Proxy</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <main>
-      <h1>Speak websocket proxy is running.</h1>
-      <p>Connect via <code>ws://localhost:${PORT}/ws</code></p>
-    </main>
-  </body>
-</html>
-  `);
-});
+function buildProxyTarget(url) {
+  if (!url) return undefined;
+  if (url.startsWith("ws://")) return url.replace("ws://", "http://");
+  if (url.startsWith("wss://")) return url.replace("wss://", "https://");
+  return url;
+}
 
-const speakProxy = createProxyMiddleware("/ws", {
-  target: SPEAK_WS_URL,
-  changeOrigin: true,
-  ws: true,
-  secure: true,
-  pathRewrite: {
-    "^/ws": "",
-  },
-  onProxyReqWs(proxyReq) {
-    if (SPEAK_ACCESS_TOKEN) {
-      proxyReq.setHeader("X-Access-Token", SPEAK_ACCESS_TOKEN);
+const SPEAK_HTTP_TARGET = buildProxyTarget(SPEAK_WS_URL);
+if (!SPEAK_HTTP_TARGET) {
+  console.warn("[proxy] No SPEAK_WS_URL configured; WebSocket proxy disabled.");
+}
+
+const speakProxy =
+  SPEAK_HTTP_TARGET != null
+    ? createProxyMiddleware({
+        target: SPEAK_HTTP_TARGET,
+        changeOrigin: true,
+        ws: true,
+        secure: true,
+        pathRewrite: {
+          "^/ws": "",
+        },
+        onProxyReq(proxyReq, req) {
+          if (SPEAK_ACCESS_TOKEN) {
+            proxyReq.setHeader("X-Access-Token", SPEAK_ACCESS_TOKEN);
+          }
+          if (SPEAK_CLIENT_INFO) {
+            proxyReq.setHeader("X-Client-Info", SPEAK_CLIENT_INFO);
+          }
+        },
+        onProxyReqWs(proxyReq, req, socket, options, head) {
+          if (SPEAK_ACCESS_TOKEN) {
+            proxyReq.setHeader("X-Access-Token", SPEAK_ACCESS_TOKEN);
+          }
+          if (SPEAK_CLIENT_INFO) {
+            proxyReq.setHeader("X-Client-Info", SPEAK_CLIENT_INFO);
+          }
+        },
+      })
+    : null;
+
+if (speakProxy) {
+  app.use("/ws", speakProxy);
+
+  server.on("upgrade", (req, socket, head) => {
+    if (req.url?.startsWith("/ws")) {
+      speakProxy.upgrade(req, socket, head);
     }
-    if (SPEAK_CLIENT_INFO) {
-      proxyReq.setHeader("X-Client-Info", SPEAK_CLIENT_INFO);
-    }
-  },
-  headers:
-    SPEAK_ACCESS_TOKEN || SPEAK_CLIENT_INFO
-      ? {
-          ...(SPEAK_ACCESS_TOKEN
-            ? { "X-Access-Token": SPEAK_ACCESS_TOKEN }
-            : {}),
-          ...(SPEAK_CLIENT_INFO ? { "X-Client-Info": SPEAK_CLIENT_INFO } : {}),
-        }
-      : undefined,
-});
+  });
 
-app.use("/ws", speakProxy);
-
-server.on("upgrade", (req, socket, head) => {
-  if (req.url?.startsWith("/ws")) {
-    speakProxy.upgrade(req, socket, head);
-  }
-});
-
-server.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`);
-  console.log(`Forwarding WebSocket traffic to ${SPEAK_WS_URL}`);
-});
+  server.listen(PORT, () => {
+    console.log(`Proxy server running on http://localhost:${PORT}`);
+    console.log(`Forwarding WebSocket traffic to ${SPEAK_WS_URL}`);
+  });
+} else {
+  server.listen(PORT, () => {
+    console.log(
+      `Server running without WebSocket proxy on http://localhost:${PORT}`
+    );
+  });
+}
