@@ -15,9 +15,9 @@ const PORT = process.env.PORT || 4000;
 const SPEAK_WS_URL =
   process.env.SPEAK_WS_URL ?? "wss://api.usespeak-staging.com/public/v2/ws";
 const SPEAK_ACCESS_TOKEN =
-  process.env.X_ACCESS_TOKEN ?? "";
+  process.env.SPEAK_WS_X_ACCESS_TOKEN ?? process.env.X_ACCESS_TOKEN ?? "";
 const SPEAK_CLIENT_INFO =
-  process.env.X_CLIENT_INFO ?? "";
+  process.env.SPEAK_WS_X_CLIENT_INFO ?? process.env.X_CLIENT_INFO ?? "";
 
 const parsedUrl = new URL(SPEAK_WS_URL);
 const targetOrigin = `${parsedUrl.protocol === "wss:" ? "https:" : "http:"}//${
@@ -79,6 +79,6 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Proxy server running at http://localhost:${PORT}`);
-  console.log(`Forwarding WebSocket traffic to ${SPEAK_WS_URL}`);
+  console.log(`🚀 Proxy server running at http://localhost:${PORT}`);
+  console.log(`🔁 Forwarding WebSocket traffic to ${SPEAK_WS_URL}`);
 });
