@@ -1,6 +1,6 @@
 # Speak Take-Home Project
 
-Hi! I built this such that you can view it on the web as an app format. It's a simple UI frontend featuring lessons in Spanish, French, and Korean.
+I built this mock voice lesson app using React, Tailwind, Node.js, and Express.js. I had a lot of fun learning while doing this project, thank you for your consideration!
 
 ## Architecture Overview
 
