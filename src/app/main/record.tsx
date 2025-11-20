@@ -79,7 +79,7 @@ export default function Record({ course, lessonTitle }: RecordProps) {
   };
 
   return (
-    <section className="flex justify-between h-screen w-full flex-col gap-6 bg-gradient-to-br from-sky-50 via-white to-blue-100 px-6 pb-12 pt-10 text-slate-600">
+    <section className="flex justify-between h-screen w-full flex-col gap-6 px-6 pb-12 pt-10 text-slate-600">
       <div className="flex flex-col items-center gap-2 text-center">
         <Image src={Logo} className="h-12 w-12" alt="Speak logo" />
         <h1 className="text-3xl font-semibold text-slate-900">Speak</h1>
